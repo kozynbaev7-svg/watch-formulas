@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Формулы">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Формулы на часы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600&display=swap">
+<style>
+/* Layout: one narrow column — input, settings, then a strip of watch-shaped previews */
+:root{
+  --bg:#eef2f0; --surface:#ffffff; --fg:#17211d; --muted:#5b6964; --line:#d3ddd8;
+  --accent:#0d7a62; --accent-fg:#ffffff; --bezel:#1b1f1e;
+  --f-display:"Unbounded", "Onest", system-ui, sans-serif;
+  --f-body:"Onest", -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1210; --surface:#151c19; --fg:#e4ece9; --muted:#91a19b; --line:#27322e;
+  --accent:#43c39f; --accent-fg:#04140e; --bezel:#2a302e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1210; --surface:#151c19; --fg:#e4ece9; --muted:#91a19b; --line:#27322e;
+  --accent:#43c39f; --accent-fg:#04140e; --bezel:#2a302e; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:20px 40px}
+.wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1{font-family:var(--f-display);font-weight:600;font-size:1.45rem;line-height:1.2;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.lead{margin:4px 0 0;color:var(--muted);max-width:60ch}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+label.cap{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+textarea{width:100%;min-height:200px;resize:vertical;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);
+  font:14px/1.45 ui-monospace, "SF Mono", Menlo, monospace;padding:10px}
+textarea:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+select,input[type=range]{font:inherit;color:var(--fg)}
+select{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--bg);color:var(--fg);font:inherit;padding:6px 12px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-fg)}
+.size-val{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.85rem}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn{border:0;border-radius:10px;padding:11px 18px;font:600 15px var(--f-body);cursor:pointer;background:var(--accent);color:var(--accent-fg)}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.status{font-size:.85rem;color:var(--muted);min-height:1.3em}
+.gallery{display:flex;flex-wrap:wrap;gap:14px}
+.watch{background:var(--bezel);padding:7px;border-radius:30px;cursor:zoom-in;border:0;display:flex;flex-direction:column;align-items:center;gap:4px}
+.watch img{display:block;width:150px;border-radius:24px}
+.watch span{color:#cfd8d4;font-size:.72rem;font-variant-numeric:tabular-nums}
+.card{display:flex;flex-direction:column;align-items:center;gap:8px}
+.save{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:9px;padding:7px 14px;font:500 14px var(--f-body);cursor:pointer;width:100%}
+.viewer.clean .vbar{visibility:hidden}
+.viewer .hint{color:#888;font-size:.8rem}
+.viewer.clean .hint{visibility:hidden}
+ol.steps{margin:0;padding-left:1.25em;display:flex;flex-direction:column;gap:6px;max-width:62ch}
+ol.steps b{font-weight:600}
+.viewer{position:fixed;inset:0;background:#000;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  padding:calc(12px + env(safe-area-inset-top,0px)) max(12px, env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(12px, env(safe-area-inset-left,0px))}
+.viewer img{max-width:100%;max-height:78vh;border-radius:28px}
+.viewer .vbar{display:flex;gap:10px;align-items:center;color:#ddd;font-variant-numeric:tabular-nums}
+.viewer button{background:#222;color:#eee;border:1px solid #444;border-radius:10px;padding:9px 14px;font:inherit;cursor:pointer}
+@media (prefers-reduced-motion:no-preference){.watch{transition:transform .15s}.watch:hover{transform:translateY(-2px)}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Формулы на часы</h1>
+    <p class="lead">Вставь ответ ИИ с LaTeX. Страница нарисует формулы и нарежет текст на картинки под экран Apple Watch SE.</p>
+  </header>
+
+  <section class="panel">
+    <label class="cap" for="src">Ответ ИИ</label>
+    <textarea id="src" spellcheck="false" placeholder="Вставь сюда ответ ИИ…"></textarea>
+    <div class="row">
+      <div class="field">
+        <label class="cap" for="size">Часы</label>
+        <select id="size">
+          <option value="44" selected>SE 44 мм</option>
+          <option value="40">SE 40 мм</option>
+        </select>
+      </div>
+      <div class="field">
+        <span class="cap" id="themeLbl">Фон</span>
+        <div class="seg" role="group" aria-labelledby="themeLbl">
+          <button type="button" id="thDark" aria-pressed="true">Чёрный</button>
+          <button type="button" id="thLight" aria-pressed="false">Белый</button>
+        </div>
+      </div>
+      <div class="field" style="flex:1;min-width:150px">
+        <label class="cap" for="fs">Шрифт <span class="size-val" id="fsVal">15</span></label>
+        <input type="range" id="fs" min="11" max="24" value="15">
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="go" type="button">Сделать картинки</button>
+      <button class="btn ghost" id="saveAll" type="button" hidden>Скачать все</button>
+      <button class="btn ghost" id="clear" type="button">Очистить</button>
+    </div>
+    <div class="status" id="status">Загружаю движок формул… Если надпись не меняется, открой сайт по ссылке в Safari: просмотр в «Файлах» не запускает скрипты.</div>
+  </section>
+
+  <section class="gallery" id="gallery" aria-label="Картинки для часов"></section>
+
+  <section class="panel">
+    <span class="cap">Как перенести на часы</span>
+    <ol class="steps">
+      <li>Под ответом ИИ нажми <b>«Копировать»</b> и вставь текст в поле выше.</li>
+      <li>Нажми <b>«Сделать картинки»</b>.</li>
+      <li>Нажми <b>«Скачать все»</b> → <b>«Сохранить изображения»</b>. Или подержи одну картинку → <b>«Сохранить в Фото»</b>.</li>
+      <li>В «Фото» добавь картинки в альбом, например «Часы».</li>
+      <li>На iPhone: <b>Watch → Фото → Синхронизация альбома</b> → выбери «Часы». На часах листай фото и приближай колёсиком.</li>
+    </ol>
+  </section>
+</div>
+
+<div class="viewer" id="viewer" hidden>
+  <img id="vImg" alt="">
+  <div class="hint">Коснись картинки, чтобы скрыть кнопки для скриншота</div>
+  <div class="vbar">
+    <button type="button" id="vPrev">←</button>
+    <span id="vNum"></span>
+    <button type="button" id="vNext">→</button>
+    <button type="button" id="vClose">Закрыть</button>
+  </div>
+</div>
+
+<script>
+window.MathJax = { svg: { fontCache: 'none' }, startup: { typeset: false } };
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<script>
+const SAMPLE = `**Задача.** Тело брошено вертикально вверх со скоростью $v_0 = 20$ м/с. Найти максимальную высоту подъёма.
+
+**Дано:** $v_0 = 20$ м/с, $g = 9{,}8$ м/с²
+**Найти:** $h_{max}$
+
+**Решение.** В верхней точке скорость равна нулю, поэтому
+$$v^2 - v_0^2 = -2gh \\;\\Rightarrow\\; h_{max} = \\frac{v_0^2}{2g}$$
+Подставляем числа:
+$$h_{max} = \\frac{20^2}{2\\cdot 9{,}8} \\approx 20{,}4$$
+
+**Ответ:** $h_{max} \\approx 20{,}4$ м`;
+
+const DPR = 2;
+const SIZES = { '44': [184, 224], '40': [162, 197] }; // 368×448 и 324×394 пикселей
+const FAMILY = '-apple-system, "SF Pro Text", "Segoe UI", Roboto, Arial, sans-serif';
+let dark = true;
+let pages = [];
+let current = 0;
+
+const $ = id => document.getElementById(id);
+const src = $('src'), status = $('status'), gallery = $('gallery');
+
+
+// ---------- разбор текста ----------
+function parse(text) {
+  text = text.replace(/\r/g, '');
+  const blocks = [];
+  const re = /\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]/g;
+  let last = 0, m;
+  while ((m = re.exec(text))) {
+    textBlocks(text.slice(last, m.index), blocks);
+    blocks.push({ kind: 'display', tex: (m[1] || m[2]).trim() });
+    last = re.lastIndex;
+  }
+  textBlocks(text.slice(last), blocks);
+  return blocks;
+}
+
+function textBlocks(t, blocks) {
+  for (const line of t.split('\n')) {
+    let s = line.trim();
+    if (!s || /^(-{3,}|\*{3,}|_{3,})$/.test(s)) {
+      if (blocks.length && blocks[blocks.length - 1].kind !== 'gap') blocks.push({ kind: 'gap' });
+      continue;
+    }
+    let heading = false, prefix = '';
+    const h = s.match(/^#{1,6}\s+(.*)$/);
+    if (h) { heading = true; s = h[1]; }
+    else {
+      const li = s.match(/^[-*•]\s+(.*)$/);
+      const ol = s.match(/^(\d+[.)])\s+(.*)$/);
+      if (li) { prefix = '• '; s = li[1]; }
+      else if (ol) { prefix = ol[1] + ' '; s = ol[2]; }
+    }
+    s = s.replace(/^>\s?/, '');
+    blocks.push({ kind: 'para', heading, inl: inline(prefix + s, heading) });
+  }
+}
+
+function inline(s, bold) {
+  const out = [];
+  const re = /\\\((.+?)\\\)|\$([^$\n]+?)\$|\*\*(.+?)\*\*|`([^`]+)`/g;
+  let last = 0, m;
+  while ((m = re.exec(s))) {
+    if (m.index > last) out.push({ t: 'text', s: s.slice(last, m.index), bold });
+    if (m[1] || m[2]) out.push({ t: 'math', tex: m[1] || m[2] });
+    else if (m[3]) out.push(...inline(m[3], true));
+    else out.push({ t: 'text', s: m[4], bold });
+    last = re.lastIndex;
+  }
+  if (last < s.length) out.push({ t: 'text', s: s.slice(last), bold });
+  return out;
+}
+
+// ---------- формула → картинка ----------
+async function mathBox(tex, display, px, color) {
+  const node = await MathJax.tex2svgPromise(tex, { display });
+  const svg = node.querySelector('svg');
+  // viewBox в тысячных долях em
+  const vb = svg.getAttribute('viewBox').split(/\s+/).map(Number);
+  const w = vb[2] / 1000 * px, h = vb[3] / 1000 * px;
+  const asc = -vb[1] / 1000 * px;
+  svg.setAttribute('width', w * DPR);
+  svg.setAttribute('height', h * DPR);
+  svg.removeAttribute('style');
+  const str = new XMLSerializer().serializeToString(svg).replace(/currentColor/g, color);
+  const img = new Image();
+  await new Promise((ok, fail) => {
+    img.onload = ok; img.onerror = fail;
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(str);
+  });
+  return { t: 'math', img, w, h, asc, desc: h - asc };
+}
+
+function scaled(box, k) {
+  return { ...box, w: box.w * k, h: box.h * k, asc: box.asc * k, desc: box.desc * k };
+}
+
+// ---------- раскладка ----------
+const mctx = document.createElement('canvas').getContext('2d');
+const font = (px, bold) => `${bold ? 700 : 400} ${px}px ${FAMILY}`;
+
+async function build() {
+  const [W, H] = SIZES[$('size').value];
+  const base = +$('fs').value;
+  const fg = dark ? '#f2f2f2' : '#111111';
+  const bg = dark ? '#000000' : '#ffffff';
+  const muted = dark ? '#7d8783' : '#8a918e';
+  const pad = 10, footer = 14;
+  const maxW = W - pad * 2;
+  const avail = H - pad * 2 - footer;
+
+  const rows = [];
+  for (const b of parse(src.value)) {
+    if (b.kind === 'gap') { rows.push({ h: base * 0.45, gap: true, draw() {} }); continue; }
+
+    if (b.kind === 'display') {
+      let box = await mathBox(b.tex, true, base, fg);
+      const k = Math.min(1, maxW / box.w, avail / (box.h + base * 0.4));
+      box = scaled(box, k);
+      rows.push({ h: box.h + base * 0.4, draw(ctx, y) {
+        ctx.drawImage(box.img, pad + (maxW - box.w) / 2, y + base * 0.2, box.w, box.h);
+      } });
+      continue;
+    }
+
+    const px = b.heading ? Math.round(base * 1.15) : base;
+    // атомы: слова, пробелы, формулы
+    const atoms = [];
+    for (const it of b.inl) {
+      if (it.t === 'math') {
+        let box = await mathBox(it.tex, false, px, fg);
+        if (box.w > maxW) box = scaled(box, maxW / box.w);
+        atoms.push(box);
+      } else {
+        mctx.font = font(px, it.bold);
+        for (const part of it.s.split(/(\s+)/)) {
+          if (!part) continue;
+          const space = /^\s+$/.test(part);
+          const txt = space ? ' ' : part;
+          atoms.push({ t: 'text', s: txt, bold: it.bold, space, w: mctx.measureText(txt).width });
+        }
+      }
+    }
+    // перенос строк
+    const lines = [];
+    let cur = [], x = 0;
+    const push = () => {
+      while (cur.length && cur[cur.length - 1].space) cur.pop();
+      if (cur.length) lines.push(cur);
+      cur = []; x = 0;
+    };
+    for (const a of atoms) {
+      if (a.space) { if (cur.length) { cur.push(a); x += a.w; } continue; }
+      if (x + a.w > maxW && cur.length) push();
+      if (a.t === 'text' && a.w > maxW) {
+        // очень длинное слово режем по буквам
+        mctx.font = font(px, a.bold);
+        let chunk = '';
+        for (const ch of a.s) {
+          if (mctx.measureText(chunk + ch).width > maxW - x && chunk) {
+            cur.push({ ...a, s: chunk, w: mctx.measureText(chunk).width }); push(); chunk = '';
+          }
+          chunk += ch;
+        }
+        a.s = chunk; a.w = mctx.measureText(chunk).width;
+      }
+      cur.push(a); x += a.w;
+    }
+    push();
+
+    lines.forEach((line, i) => {
+      let asc = px * 0.8, desc = px * 0.25;
+      for (const a of line) if (a.t === 'math') { asc = Math.max(asc, a.asc); desc = Math.max(desc, a.desc); }
+      const lead = px * 0.22;
+      const extra = i === lines.length - 1 ? px * 0.2 : 0;
+      rows.push({ h: asc + desc + lead + extra, draw(ctx, y) {
+        const baseY = y + lead / 2 + asc;
+        let xx = pad;
+        for (const a of line) {
+          if (a.t === 'math') ctx.drawImage(a.img, xx, baseY - a.asc, a.w, a.h);
+          else if (!a.space) { ctx.font = font(px, a.bold); ctx.fillStyle = fg; ctx.fillText(a.s, xx, baseY); }
+          xx += a.w;
+        }
+      } });
+    });
+  }
+
+  // по страницам
+  const groups = [[]];
+  let used = 0;
+  for (const r of rows) {
+    const page = groups[groups.length - 1];
+    if (r.gap && page.length === 0) continue;
+    if (used + r.h > avail && page.length) { groups.push([]); used = 0; if (r.gap) continue; }
+    groups[groups.length - 1].push(r); used += r.h;
+  }
+  while (groups.length > 1 && groups[groups.length - 1].every(r => r.gap)) groups.pop();
+
+  // рисуем
+  return groups.map((g, i) => {
+    const c = document.createElement('canvas');
+    c.width = W * DPR; c.height = H * DPR;
+    const ctx = c.getContext('2d');
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    ctx.textBaseline = 'alphabetic';
+    let y = pad;
+    for (const r of g) { r.draw(ctx, y); y += r.h; }
+    if (groups.length > 1) {
+      ctx.font = font(10, false); ctx.fillStyle = muted; ctx.textAlign = 'center';
+      ctx.fillText(`${i + 1}/${groups.length}`, W / 2, H - 5);
+    }
+    return c.toDataURL('image/png');
+  });
+}
+
+// ---------- интерфейс ----------
+async function run() {
+  if (!src.value.trim()) { status.textContent = 'Вставь текст ответа в поле выше.'; gallery.replaceChildren(); return; }
+  status.textContent = 'Рисую…';
+  try {
+    pages = await build();
+    gallery.replaceChildren(...pages.map((url, i) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      const b = document.createElement('button');
+      b.className = 'watch'; b.type = 'button';
+      b.setAttribute('aria-label', `Открыть картинку ${i + 1}`);
+      const img = document.createElement('img');
+      img.src = url; img.alt = `Страница ${i + 1}`;
+      const n = document.createElement('span');
+      n.textContent = `${i + 1} из ${pages.length}`;
+      b.append(img, n);
+      b.addEventListener('click', () => openViewer(i));
+      card.append(b);
+      if (downloads) {
+        const s = document.createElement('button');
+        s.type = 'button'; s.className = 'save'; s.textContent = 'Сохранить';
+        s.addEventListener('click', () => saveOne(i));
+        card.append(s);
+      }
+      return card;
+    }));
+    $('saveAll').hidden = pages.length === 0;
+    const word = n => n % 10 === 1 && n % 100 !== 11 ? 'картинка' : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? 'картинки' : 'картинок');
+    status.textContent = downloads
+      ? `Готово: ${pages.length} ${word(pages.length)}. Нажми «Сохранить» под картинкой → «Сохранить изображение».`
+      : `Готово: ${pages.length} ${word(pages.length)}. Нажми «Скачать все» → «Сохранить изображения» или подержи картинку → «Сохранить в Фото».`;
+  } catch (e) {
+    status.textContent = 'Не получилось нарисовать: проверь, что все $ и $$ закрыты.';
+    console.error(e);
+  }
+}
+
+let downloads = null;
+if (window.claude && claude.use) {
+  claude.use('downloads').then(d => { downloads = d; if (d && pages.length) run(); }).catch(() => {});
+}
+
+function toBlob(url) {
+  const bin = atob(url.split(',')[1]);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type: 'image/png' });
+}
+
+async function saveOne(i) {
+  if (!downloads) return false;
+  try {
+    await downloads.save({ filename: `formula-${i + 1}.png`, data: await toBlob(pages[i]) });
+    status.textContent = `Картинка ${i + 1} сохранена.`;
+    return true;
+  } catch (e) {
+    if (e && e.code === 'declined') status.textContent = 'Сохранение отменено.';
+    else if (e && e.code === 'rate_limited') status.textContent = 'Подожди секунду и нажми ещё раз.';
+    else status.textContent = 'Здесь сохранить не получилось. Коснись картинки и сделай скриншот.';
+    return false;
+  }
+}
+
+$('saveAll').onclick = async () => {
+  // 1) Safari: системное меню «Поделиться» сразу со всеми картинками
+  const files = pages.map((u, i) => new File([toBlob(u)], `formula-${i + 1}.png`, { type: 'image/png' }));
+  if (navigator.canShare && navigator.canShare({ files })) {
+    try {
+      await navigator.share({ files });
+      status.textContent = 'Готово. Если выбрал «Сохранить изображения», они уже в «Фото».';
+      return;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      // меню не открылось: пробуем другие способы ниже
+    }
+  }
+  // 2) Нет меню «Поделиться»: обычное скачивание по одной
+  if (!downloads) {
+    for (const f of files) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(f); a.download = f.name;
+      document.body.append(a); a.click(); a.remove();
+      await new Promise(r => setTimeout(r, 400));
+    }
+    status.textContent = 'Картинки скачаны в «Загрузки».';
+    return;
+  }
+  // 3) Внутри Claude
+  for (let i = 0; i < pages.length; i++) {
+    status.textContent = `Сохраняю ${i + 1} из ${pages.length}…`;
+    if (!(await saveOne(i))) return;
+  }
+  status.textContent = 'Все картинки сохранены.';
+};
+
+function openViewer(i) {
+  current = i;
+  $('vImg').src = pages[i];
+  $('vNum').textContent = `${i + 1}/${pages.length}`;
+  $('vPrev').disabled = i === 0;
+  $('vNext').disabled = i === pages.length - 1;
+  $('viewer').classList.remove('clean');
+  $('viewer').hidden = false;
+}
+$('vImg').onclick = () => $('viewer').classList.toggle('clean');
+$('vPrev').onclick = () => current > 0 && openViewer(current - 1);
+$('vNext').onclick = () => current < pages.length - 1 && openViewer(current + 1);
+$('vClose').onclick = () => { $('viewer').hidden = true; };
+document.addEventListener('keydown', e => {
+  if ($('viewer').hidden) return;
+  if (e.key === 'Escape') $('viewer').hidden = true;
+  if (e.key === 'ArrowLeft') $('vPrev').click();
+  if (e.key === 'ArrowRight') $('vNext').click();
+});
+
+$('go').onclick = run;
+$('clear').onclick = () => { src.value = ''; gallery.replaceChildren(); status.textContent = 'Вставь текст ответа в поле выше.'; src.focus(); };
+$('size').onchange = run;
+$('fs').oninput = () => { $('fsVal').textContent = $('fs').value; };
+$('fs').onchange = run;
+$('thDark').onclick = () => { dark = true; $('thDark').setAttribute('aria-pressed', 'true'); $('thLight').setAttribute('aria-pressed', 'false'); run(); };
+$('thLight').onclick = () => { dark = false; $('thLight').setAttribute('aria-pressed', 'true'); $('thDark').setAttribute('aria-pressed', 'false'); run(); };
+
+if (window.MathJax && MathJax.startup && MathJax.startup.promise) {
+  MathJax.startup.promise.then(run);
+} else {
+  status.textContent = 'Не загрузился движок формул. Обнови страницу.';
+}
+</script>
+
+</body>
+</html>
